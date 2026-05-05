@@ -35,12 +35,15 @@ class MultiOutputMlp(nn.Module) :
         self.shared = nn.Sequential(*layers)
 
         self.head_titre = nn.Linear(in_features,212)
-        self.head_parent = nn.Linear(in_features,26)
+        self.head_parent = nn.Linear(in_features + 212,26)
 
     def forward(self,x):
         shared_out = self.shared(x)
-        return (
-            self.head_titre(shared_out),
-            self.head_parent(shared_out)
-        )
+        
+        titre_out = self.head_titre(shared_out)
+
+        parent_input = torch.cat([shared_out,titre_out],dim=1)
+        parent_out = self.head_parent(parent_input)
+        
+        return titre_out,parent_out 
     
