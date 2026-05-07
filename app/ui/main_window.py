@@ -97,7 +97,7 @@ class MainWindow(QMainWindow):
             "precisez2" : self.input_precisez2.text(),
             "service" : self.input_service.text()
         }
-
+        #still did not work on the models and the logic 
         self.result_titre.setText("not implemented yet")
         self.result_titre_conf.setText("not inplemented yet")
         self.result_1er_niveau.setText("not implemented yet")
