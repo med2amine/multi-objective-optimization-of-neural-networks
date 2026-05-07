@@ -22,7 +22,14 @@ class MultiOutputMlp(nn.Module) :
         layers = []
         in_features = input_dim
 
-        for i in range(n_layers):
+        for i in range(n_layers): 
+            # cette boucle va créer dynamiquement le corps de notre réseau de neurones
+            # a chaque itération : 
+            # - le nombre de neurones est choisi par optuna entre 64 et 512 .
+            # - une couche linéaire est ajoutée .
+            # - une fonction d'activation est appliquée .
+            # - puis un dropout est utilisé pour la regularisation .
+            # la sortie de chaque couche devient l'entrée de la suivante 
             out_features = trial.suggest_int(
                 f"n_units_l{i}",64,512,step=64
             )
@@ -38,11 +45,16 @@ class MultiOutputMlp(nn.Module) :
         self.head_parent = nn.Linear(in_features + 212,26)
 
     def forward(self,x):
+        # les données d'entrée sont traitées par les couches partagées pour extraire une représentation commune.
         shared_out = self.shared(x)
         
+        # la première tete predit la sortie "titre"
         titre_out = self.head_titre(shared_out)
 
+        # la deuxieme tete predie le sortie "parent" en utilisant la representation partagée et la sortie de la premiere tete
         parent_input = torch.cat([shared_out,titre_out],dim=1)
+
+        # prodiuit la decision final 
         parent_out = self.head_parent(parent_input)
         
         return titre_out,parent_out 
