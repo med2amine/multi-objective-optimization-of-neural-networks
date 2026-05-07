@@ -25,7 +25,7 @@ file_path = BASE_DIR / "Demande_20260504_1039404585210306716138048554.xlsx"
 
 dataset = pd.read_excel(file_path)
 
-# on fait une copie du dataset pour eviter de modifier l'original
+# on fait une copie du dataset pour eviter de modifier l'original et pour pouvoir revenir en arrière si besoin
 copydataset = dataset.copy()
 
 # on suprime les lignes qui n'ont pas de description
