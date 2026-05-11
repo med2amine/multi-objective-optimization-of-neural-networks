@@ -28,7 +28,7 @@ class MultiOutputMlp(nn.Module):
             # - une fonction d'activation est appliquée
             # - puis un dropout est utilisé pour la régularisation
             # la sortie de chaque couche devient l'entrée de la suivante
-            out_features = trial.suggest_int(f"n_units_l{i}", 64, 512, step=64)
+            out_features = trial.suggest_int(f"n_units_l{i}", 256, 2048, step=128)
 
             layers.append(nn.Linear(in_features, out_features))
             layers.append(activation)
