@@ -8,157 +8,135 @@ import nltk
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from scipy.sparse import hstack
+
 import scipy.sparse as sp
 import joblib
 
-nltk.download('stopwords')
-
+# on utilise le lable encoder pour convertir les catégories en valeurs numériques pour que le modéle puisse les traiter 
 le = LabelEncoder()
+nltk.download('stopwords') # stopwords sont des mots qui n'apportent pas de valeur donc on les supprime
+
 BASE_DIR = Path(__file__).resolve().parent
+
 file_path = BASE_DIR / "Demande_20260504_1039404585210306716138048554.xlsx"
 
 dataset = pd.read_excel(file_path)
+
+# on fait une copie du dataset pour eviter de modifier l'original et pour pouvoir revenir en arrière si besoin
 copydataset = dataset.copy()
 
+# on suprime les lignes qui n'ont pas de description
 copydataset = copydataset.dropna(subset=["Description"])
 
-copydataset["Date/Heure de création"]   = pd.to_datetime(copydataset["Date/Heure de création"])
+print(copydataset.columns.tolist())
+
+print(copydataset.isnull().sum())
+
+copydataset["Date/Heure de création"] = pd.to_datetime(copydataset["Date/Heure de création"])
 copydataset["Date/Heure de résolution"] = pd.to_datetime(copydataset["Date/Heure de résolution"])
+
+# on calcule le temps de résolution de chaque ticket
 copydataset["Resolution time"] = (
     copydataset["Date/Heure de résolution"] - copydataset["Date/Heure de création"]
 )
 
-copydataset = copydataset.drop(columns=[
-    "Date/Heure de création", "Date/Heure de résolution", "ID",
-    "Type de résolution", "Code Achèvement", "Demandé pour E-mail",
-    "Compteur de rejet", "Compteur de réaffectation", "NPS",
-    "Demandé pour Nom", "Affectation actuelle", "Groupe d'affectation Nom",
-    "Connaissance(s) associée(s)", "KM à créer", "KM à mettre à jour",
-    "Aucun besoin de connaissance"
-])
+print(copydataset[["Date/Heure de création", "Date/Heure de résolution", "Resolution time"]].head())
+
+# on suprime les colonnes qui ne sont pas utiles pour notre modéle
+copydataset = copydataset.drop(columns=["Date/Heure de création","Date/Heure de résolution","ID","Type de résolution","Code Achèvement","Demandé pour E-mail","Compteur de rejet","Compteur de réaffectation","NPS","Demandé pour Nom","Affectation actuelle","Groupe d'affectation Nom","Connaissance(s) associée(s)","KM à créer","KM à mettre à jour","Aucun besoin de connaissance"])
+print(copydataset.columns.tolist())
 
 copydataset["Catégorisation Parent de 1er niveau"] = copydataset["Catégorisation Parent de 1er niveau"].fillna("Unknown")
-copydataset["Catégorisation Parent de 2e niveau"]  = copydataset["Catégorisation Parent de 2e niveau"].fillna("Unknown")
+copydataset["Catégorisation Parent de 2e niveau"] = copydataset["Catégorisation Parent de 2e niveau"].fillna("Unknown")
 
-# ── Text cleaning ─────────────────────────────────────────────────────────────
 french_stopwords = set(stopwords.words("french"))
 stemmer = SnowballStemmer("french")
 
-# ── NEW: expanded French IT stopwords — these words appear everywhere but
-#         carry no discriminative signal for ticket classification
-IT_NOISE_WORDS = {
-    "bonjour", "merci", "bonne", "journée", "cordialement", "svp", "stp",
-    "besoin", "aide", "problème", "probleme", "ticket", "demande", "service",
-    "utilisateur", "pouvez", "pourriez", "faire", "avoir", "être", "etre",
-    "suite", "objet", "mail", "message", "depuis", "toujours", "encore",
-    "bien", "votre", "notre", "avez", "avons", "comme", "plus", "très", "tres"
-}
-ALL_STOPWORDS = french_stopwords | IT_NOISE_WORDS
+def lower_text(text):
+    return text.lower() # convertir le texte en minuscules
+
+def remove_punctuation(text):
+    return re.sub(r'[^\w\s]',"",text) # suprimer la ponctuation
+
+def remove_html_tags(text):
+    return re.sub(r'<.*?>',"",text) # suprimer les tag html
+
+
+def remove_stopwords(text):
+    tokens = text.split()
+    return " ".join(word for word in tokens if word not in french_stopwords) # suprimer les stopwords
+
+def stem_text(text):
+    tokens = text.split()
+    return " ".join(stemmer.stem(word) for word in tokens) # appliquer le stemming pour réduire les mots à leur racine
+
+def remove_numbers(text):
+    return re.sub(r'\d+',"",text) # suprimer les chiffres
+
+def remove_extra_whitespace(text):
+    return re.sub(r'\s+'," ",text).strip()
 
 def clean_text(text):
-    if not isinstance(text, str):
+    if not isinstance(text,str):
         return ""
-    # remove HTML
-    text = re.sub(r'<.*?>', " ", text)
-    # lowercase
-    text = text.lower()
-    # remove punctuation and special characters
-    text = re.sub(r'[^\w\s]', " ", text)
-    # remove numbers
-    text = re.sub(r'\d+', " ", text)
-    # remove extra whitespace
-    text = re.sub(r'\s+', " ", text).strip()
-    # remove stopwords + IT noise
-    tokens = text.split()
-    tokens = [w for w in tokens if w not in ALL_STOPWORDS and len(w) > 2]
-    # stem
-    tokens = [stemmer.stem(w) for w in tokens]
-    return " ".join(tokens)
+    text = remove_html_tags(text)
+    text = lower_text(text)
+    text = remove_punctuation(text)
+    text = remove_numbers(text)
+    text = remove_stopwords(text)
+    text = stem_text(text)
+    text = remove_extra_whitespace(text)
+    return text
 
-# ── Decision variables ────────────────────────────────────────────────────────
-decision_variables = [
-    "Titre",
-    "Description",
-    "Offre Libellé d'affichage",
-    "Votre demande concerne Libellé",
-    "Précisez votre demande (1) Libellé",
-    "Précisez votre demande (2) Libellé",
-    "Service impacté Libellé d'affichage"
-]
+# les variables de décision sont les variables qui vont etre utilisées par le modéle pour faire la classification
+decision_variables = ["Titre","Description","Offre Libellé d'affichage","Votre demande concerne Libellé","Précisez votre demande (1) Libellé","Précisez votre demande (2) Libellé","Service impacté Libellé d'affichage"]
 
+# on applique le nettoyage a ces variables
 for var in decision_variables:
     copydataset[var] = copydataset[var].apply(clean_text)
 
-print("Sample cleaned text:")
-print(copydataset["Description"].head(3))
+print(copydataset[decision_variables].head())
 
-# ── Labels ────────────────────────────────────────────────────────────────────
+# on divise le dataset en deux parties : x = variables de décision et y = variables cibles
 x = copydataset[decision_variables]
-y = copydataset[["Catégorisation Titre", "Catégorisation Parent de 1er niveau"]].copy()
+y = copydataset[["Catégorisation Titre","Catégorisation Parent de 1er niveau"]].copy()
 
 label_encoders = {}
 for col in y.columns:
     le = LabelEncoder()
     y[col] = le.fit_transform(y[col])
-    label_encoders[col] = le
+    label_encoders[col] = le  
 
-x_train, x_test, y_train, y_test = train_test_split(
-    x, y, test_size=0.2, random_state=42, stratify=y["Catégorisation Titre"]
-)
-print(f"Train size: {len(x_train)} | Test size: {len(x_test)}")
+# on divise encore les données en deux : partie d'entrainement et partie de test
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.2,random_state=42)
 
-# ── TF-IDF with bigrams ───────────────────────────────────────────────────────
-# max_features: 500 → 1000 (more vocabulary)
-# ngram_range: (1,1) → (1,2) (captures "accès refusé", "mot de passe", etc.)
-# sublinear_tf: log scaling — dampens very frequent terms
-# min_df=2: ignore terms appearing in only 1 document (noise)
-
-# Per-column feature budgets — give more to the most informative columns
-FEATURE_BUDGET = {
-    "Titre":                                    1500,   # most informative
-    "Description":                              2000,   # most informative
-    "Offre Libellé d'affichage":                 500,
-    "Votre demande concerne Libellé":            500,
-    "Précisez votre demande (1) Libellé":        500,
-    "Précisez votre demande (2) Libellé":        500,
-    "Service impacté Libellé d'affichage":       300,
-}
-
-tfidf_vectors    = []
+tfidf_vectors = []
 tfidf_vectorizers = {}
 
+# la vectorisation pour convertir le texte en vecteurs numériques
 for var in decision_variables:
-    tfidf = TfidfVectorizer(
-        max_features  = FEATURE_BUDGET[var],
-        ngram_range   = (1, 2),     # unigrams + bigrams
-        sublinear_tf  = True,       # log(1 + tf) instead of raw tf
-        min_df        = 2,          # ignore terms in only 1 document
-        analyzer      = "word",
-    )
-    vec = tfidf.fit_transform(x_train[var])
+    tfidf = TfidfVectorizer(max_features=500)
+    vec = tfidf.fit_transform(x_train[var])  
     tfidf_vectorizers[var] = tfidf
     tfidf_vectors.append(vec)
-    print(f"{var}: {vec.shape[1]} features")
 
 x_train_tfidf = hstack(tfidf_vectors)
-test_vectors  = [tfidf_vectorizers[var].transform(x_test[var]) for var in decision_variables]
-x_test_tfidf  = hstack(test_vectors)
 
-print(f"\nFinal input shape — train: {x_train_tfidf.shape} | test: {x_test_tfidf.shape}")
+test_vectors = [tfidf_vectorizers[var].transform(x_test[var]) for var in decision_variables]
+x_test_tfidf = hstack(test_vectors)
 
-# ── Save ──────────────────────────────────────────────────────────────────────
+for col in y.columns:
+    print(f"\n{col}:\n", copydataset[col].value_counts())
+
 sp.save_npz(BASE_DIR / "x_train.npz", x_train_tfidf)
-sp.save_npz(BASE_DIR / "x_test.npz",  x_test_tfidf)
+sp.save_npz(BASE_DIR / "x_test.npz", x_test_tfidf)
 
 y_train.to_csv(BASE_DIR / "y_train.csv", index=False)
-y_test.to_csv(BASE_DIR / "y_test.csv",   index=False)
+y_test.to_csv(BASE_DIR / "y_test.csv", index=False)
 
-joblib.dump(label_encoders,    BASE_DIR / "label_encoders.pkl")
+joblib.dump(label_encoders, BASE_DIR / "label_encoders.pkl")
 joblib.dump(tfidf_vectorizers, BASE_DIR / "tfidf_vectorizers.pkl")
-
-print("\nData saved successfully.")
-for col in y.columns:
-    print(f"\n{col}: {y[col].nunique()} classes")
 
