@@ -56,7 +56,7 @@ def optimization(trial):
                            n_titre=n_titre, n_parent=n_parent)
 
     lr         = trial.suggest_float("lr", 5e-4, 8e-3, log=True)  # resserré autour de la zone gagnante
-    epochs     = trial.suggest_int("epochs", 40, 80)               # plancher relevé — les courtes durées ne convergent pas
+    epochs     = trial.suggest_int("epochs", 40, 70)               # plancher relevé — les courtes durées ne convergent pas
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])  # 128 retiré — trop grand pour les classes rares
 
     optimizer        = torch.optim.Adam(model.parameters(), lr=lr)
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         study_name="ticket_classifier"
     )
 
-    study.optimize(optimization, n_trials=100, timeout=None)  # 100 = 5 générations NSGA-II
+    study.optimize(optimization, n_trials=60, timeout=None)  # 100 = 5 générations NSGA-II
 
     print(f"\nPareto front : {len(study.best_trials)} trials")
     for trial in study.best_trials:
