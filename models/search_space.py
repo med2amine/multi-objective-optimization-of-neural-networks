@@ -6,7 +6,7 @@ class MultiOutputMlp(nn.Module):
         super(MultiOutputMlp, self).__init__()
 
         # on suggère des hyperparamètres en utilisant optuna
-        n_layers        = trial.suggest_int("n_layers", 1, 4)
+        n_layers        = trial.suggest_int("n_layers", 1, 3)
         dropout_rate    = trial.suggest_float("dropout_rate", 0.1, 0.5)
         activation_name = trial.suggest_categorical("activation", ["relu", "tanh", "leaky_relu"])
 

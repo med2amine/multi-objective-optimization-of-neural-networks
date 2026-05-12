@@ -56,7 +56,7 @@ def optimization(trial):
                            n_titre=n_titre, n_parent=n_parent)
 
     lr         = trial.suggest_float("lr", 5e-4, 8e-3, log=True)  # resserré autour de la zone gagnante
-    epochs     = trial.suggest_int("epochs", 40, 70)               # plancher relevé — les courtes durées ne convergent pas
+    epochs     = trial.suggest_int("epochs", 30, 70)               # plancher relevé — les courtes durées ne convergent pas
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])  # 128 retiré — trop grand pour les classes rares
 
     optimizer        = torch.optim.Adam(model.parameters(), lr=lr)
