@@ -21,12 +21,16 @@ nltk.download('stopwords') # stopwords sont des mots qui n'apportent pas de vale
 
 BASE_DIR = Path(__file__).resolve().parent
 
-file_path = BASE_DIR / "Demande_20260504_1039404585210306716138048554.xlsx"
+file_path1 = BASE_DIR / "Demande_20260504_1039404585210306716138048554.xlsx"
+file_path2 = BASE_DIR / "Demande_20260512_09213871714471557462053777669.xlsx"
+dataset1 = pd.read_excel(file_path1)
+dataset2 = pd.read_excel(file_path2)
 
-dataset = pd.read_excel(file_path)
+merged = pd.concat([dataset1,dataset2],ignore_index=True)
+merged = merged.drop_duplicates()
 
 # on fait une copie du dataset pour eviter de modifier l'original et pour pouvoir revenir en arrière si besoin
-copydataset = dataset.copy()
+copydataset = merged.copy()
 
 # on suprime les lignes qui n'ont pas de description
 copydataset = copydataset.dropna(subset=["Description"])
@@ -54,6 +58,12 @@ copydataset["Catégorisation Parent de 2e niveau"] = copydataset["Catégorisatio
 
 french_stopwords = set(stopwords.words("french"))
 stemmer = SnowballStemmer("french")
+
+# Drop rare classes
+counts = copydataset["Catégorisation Titre"].value_counts()
+valid_classes = counts[counts >= 5].index
+copydataset = copydataset[copydataset["Catégorisation Titre"].isin(valid_classes)].reset_index(drop=True)
+print(f"After dropping rare classes: {len(copydataset)} rows, {copydataset['Catégorisation Titre'].nunique()} classes")
 
 def lower_text(text):
     return text.lower() # convertir le texte en minuscules
