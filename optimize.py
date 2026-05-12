@@ -56,7 +56,7 @@ def optimization(trial):
                            n_titre=n_titre, n_parent=n_parent)
 
     lr         = trial.suggest_float("lr", 5e-4, 8e-3, log=True)  # resserré autour de la zone gagnante
-    epochs     = trial.suggest_int("epochs", 30, 70)               # plancher relevé — les courtes durées ne convergent pas
+    epochs     = trial.suggest_int("epochs", 20, 50)               # plancher relevé — les courtes durées ne convergent pas
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])  # 128 retiré — trop grand pour les classes rares
 
     optimizer        = torch.optim.Adam(model.parameters(), lr=lr)
@@ -72,6 +72,8 @@ def optimization(trial):
     model.train()
     n = len(x_train_t)
 
+    best_loss = float("inf")
+    patience_counter = 0
     for epoch in range(epochs):
         epoch_loss = 0.0
         indices = torch.randperm(n)
@@ -82,6 +84,8 @@ def optimization(trial):
             yb_t = y_train_titre[idx]
             yb_p = y_train_parent[idx]
 
+            
+
             titre_out, parent_out = model(xb)
             loss = criterion_titre(titre_out, yb_t) + criterion_parent(parent_out, yb_p)
 
@@ -91,9 +95,18 @@ def optimization(trial):
 
             epoch_loss += loss.item()
 
+
+
         # on passe la perte moyenne de l'époque au scheduler
         scheduler.step(epoch_loss / (n // batch_size))
 
+        if epoch_loss < best_loss:
+            best_loss = epoch_loss
+            patience_counter = 0
+        else:
+            patience_counter += 1
+        if patience_counter >= 8:
+            break
     # phase d'évaluation
     model.eval()
     with torch.no_grad():
@@ -110,7 +123,7 @@ def optimization(trial):
 
 # Run study
 if __name__ == "__main__":
-    sampler = optuna.samplers.NSGAIISampler(population_size=20)
+    sampler = optuna.samplers.NSGAIISampler(population_size=10)
 
     study = optuna.create_study(
         directions=["maximize", "minimize"],
