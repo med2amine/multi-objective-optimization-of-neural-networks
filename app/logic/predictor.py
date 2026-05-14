@@ -8,6 +8,7 @@ import scipy.sparse as sp
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from models.search_space import MultiOutputMlp
+import json
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]   # project root
 DATA_DIR = BASE_DIR / "data"
@@ -21,8 +22,8 @@ label_encoders = joblib.load(DATA_DIR / "label_encoders.pkl")
 with open(RESULTS_DIR / "best_params.json") as f:
     best_params = json.load(f)
 
-import json
-model = MultiOutputMlp(best_params, input_dim=1620, n_titre=212, n_parent=26)
+
+model = MultiOutputMlp(best_params, input_dim=1757, n_titre=140, n_parent=27)
 model.load_state_dict(torch.load(RESULTS_DIR / "best_model.pth", map_location="cpu"))
 model.eval()
 

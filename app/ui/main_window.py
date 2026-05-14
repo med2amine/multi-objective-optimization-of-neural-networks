@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,QTextEdit,QPushButton,QFrame)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+from app.logic.predictor import predict
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -89,16 +90,18 @@ class MainWindow(QMainWindow):
     
     def _on_classify(self):
         inputs = {
-            "Titre" : self.input_titre.text(),
-            "Description" : self.input_description.toPlainText(),
-            "Offre" : self.input_offre.text(),
-            "demande" : self.input_demande.text(),
-            "precisez1" : self.input_precisez1.text(),
-            "precisez2" : self.input_precisez2.text(),
-            "service" : self.input_service.text()
+            "Titre":                                    self.input_titre.text(),
+            "Description":                              self.input_description.toPlainText(),
+            "Offre Libellé d'affichage":                self.input_offre.text(),
+            "Votre demande concerne Libellé":           self.input_demande.text(),
+            "Précisez votre demande (1) Libellé":       self.input_precisez1.text(),
+            "Précisez votre demande (2) Libellé":       self.input_precisez2.text(),
+            "Service impacté Libellé d'affichage":      self.input_service.text(),
         }
-        #still did not work on the models and the logic 
-        self.result_titre.setText("not implemented yet")
-        self.result_titre_conf.setText("not inplemented yet")
-        self.result_1er_niveau.setText("not implemented yet")
-        self.result_1er_niveau_conf.setText("not inplemented yet")
+
+        result = predict(inputs)
+
+        self.result_titre.setText(result["titre"])
+        self.result_titre_conf.setText(f"Confidence : {result['titre_confidence']}%")
+        self.result_1er_niveau.setText(result["parent"])
+        self.result_1er_niveau_conf.setText(f"Confidence : {result['parent_confidence']}%")
