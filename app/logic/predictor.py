@@ -1,20 +1,23 @@
+import sys
+import pathlib
 import numpy as np
 import joblib
 import nltk
 import re
-import pathlib
 import torch
 import scipy.sparse as sp
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
-from search_space import MultiOutputMlp
 import json
-import sys
 
 if getattr(sys, 'frozen', False):
     BASE_DIR = pathlib.Path(sys._MEIPASS)
+    sys.path.insert(0, str(BASE_DIR / "models"))
 else:
     BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(BASE_DIR / "models"))
+    
+from models.search_space import MultiOutputMlp
 
 DATA_DIR = BASE_DIR / "data"
 RESULTS_DIR = BASE_DIR / "results"
