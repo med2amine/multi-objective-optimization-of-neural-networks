@@ -7,7 +7,7 @@ import torch
 import scipy.sparse as sp
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
-from models.search_space import MultiOutputMlp
+from search_space import MultiOutputMlp
 import json
 import sys
 
