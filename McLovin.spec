@@ -1,11 +1,16 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-
 a = Analysis(
     ['app\\main.py'],
-    pathex=[],
+    pathex=['C:\\Users\\mohamedamine.laaraj\\projet_pfe\\multi-objective-optimization-of-neural-networks'],
     binaries=[],
-    datas=[],
+    datas=[
+        ('models/search_space.py', 'models'),
+        ('data/tfidf_vectorizers.pkl', 'data'),
+        ('data/label_encoders.pkl', 'data'),
+        ('results/best_params.json', 'results'),
+        ('results/best_model.pth', 'results'),
+    ],
     hiddenimports=['models.search_space'],
     hookspath=[],
     hooksconfig={},
