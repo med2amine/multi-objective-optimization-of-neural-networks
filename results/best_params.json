@@ -1,0 +1,9 @@
+{
+  "n_layers": 1,
+  "dropout_rate": 0.1463965312508242,
+  "activation": "leaky_relu",
+  "n_units_l0": 512,
+  "lr": 0.0039019588036725865,
+  "epochs": 40,
+  "batch_size": 16
+}
