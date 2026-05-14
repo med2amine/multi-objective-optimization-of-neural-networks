@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,QTextEdit,QPushButton,QFrame)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from app.logic.predictor import predict
+from logic.predictor import predict
 
 class MainWindow(QMainWindow):
     def __init__(self):

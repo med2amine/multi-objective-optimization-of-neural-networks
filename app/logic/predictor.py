@@ -9,8 +9,13 @@ from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from models.search_space import MultiOutputMlp
 import json
+import sys
 
-BASE_DIR = pathlib.Path(__file__).resolve().parents[2]   # project root
+if getattr(sys, 'frozen', False):
+    BASE_DIR = pathlib.Path(sys._MEIPASS)
+else:
+    BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
+
 DATA_DIR = BASE_DIR / "data"
 RESULTS_DIR = BASE_DIR / "results"
 
