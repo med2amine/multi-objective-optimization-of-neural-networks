@@ -1,9 +1,28 @@
+# Virtual environment
+.venv/
 
-*.png
-*.pdf
-results/
+# Large binary files
+data/x_train.npz
+data/x_test.npz
+data/y_train.csv
+data/y_test.csv
+data/tfidf_vectorizers.pkl
+data/label_encoders.pkl
+data/merged_dataset.xlsx
 
+# Model weights
+results/best_model.pth
 
-app/dist/
-app/build/
-*.spec
+# PyInstaller output
+build/
+dist/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Optuna
+results/optuna.db
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
