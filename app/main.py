@@ -1,14 +1,16 @@
-import sys 
+import sys
+import pathlib
 from PySide6.QtWidgets import QApplication
-from ui.main_window import MainWindow
-from pathlib import Path
+from ui.main_window import MainWindow  # your import
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
+if getattr(sys, 'frozen', False):
+    BASE_DIR = pathlib.Path(sys._MEIPASS)
+else:
+    BASE_DIR = pathlib.Path(__file__).resolve().parent
 
-    qss_path = Path(__file__).parent /"style"/ "style.qss"
-    app.setStyleSheet(qss_path.read_text())
+app = QApplication(sys.argv)
+app.setStyleSheet((BASE_DIR / "style" / "style.qss").read_text())
 
-    window.show()
-    sys.exit(app.exec())
+window = MainWindow()
+window.show()
+sys.exit(app.exec())

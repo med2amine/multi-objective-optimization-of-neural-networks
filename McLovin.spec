@@ -10,6 +10,7 @@ a = Analysis(
         ('data/label_encoders.pkl', 'data'),
         ('results/best_params.json', 'results'),
         ('results/best_model.pth', 'results'),
+        ('app/style/style.qss', 'style'),
     ],
     hiddenimports=['models.search_space'],
     hookspath=[],
